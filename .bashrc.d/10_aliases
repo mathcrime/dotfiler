@@ -1,0 +1,37 @@
+case $(uname | tr '[:upper:]' '[:lower:]') in
+      linux*)
+        export OS_NAME=linux
+        alias ls='ls -Fa --color=always'
+        alias dir='ls -Fal --color=always'
+        alias less='less -X'
+        alias mux='tmuxinator'
+        ;;
+      freebsd*)
+        export OS_NAME=freebsd
+        alias ls='ls -aFG'
+        alias dir='ls -aFGhl'
+        alias less='less -X'
+        alias mux='tmuxinator'
+        
+        function sport {
+          if [$# -eq 0]
+          then
+            echo "Error: search term required."
+          else
+            local odir=`pwd`
+            cd /usr/ports
+            make search key=$1 |egrep -B1 "^Info"
+            cd $odir
+          fi
+        }
+        ;;
+      darwin*)
+        export OS_NAME=darwin
+        ;;
+      msys*)
+        export OS_NAME=windows
+        ;;
+      *)
+        export TRAVIS_OS_NAME=notset
+        ;;
+    esac
