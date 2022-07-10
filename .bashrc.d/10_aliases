@@ -3,14 +3,12 @@ case $(uname | tr '[:upper:]' '[:lower:]') in
         export OS_NAME=linux
         alias ls='ls -Fa --color=always'
         alias dir='ls -Fal --color=always'
-        alias less='less -X'
         alias mux='tmuxinator'
         ;;
       freebsd*)
         export OS_NAME=freebsd
         alias ls='ls -aFG'
         alias dir='ls -aFGhl'
-        alias less='less -X'
         alias mux='tmuxinator'
         
         function sport {
@@ -24,6 +22,34 @@ case $(uname | tr '[:upper:]' '[:lower:]') in
             cd $odir
           fi
         }
+
+        function _sport {
+            if [$# -eq 0]
+            then
+                echo "ERROR: search term required."
+            else
+                srch=$1
+                if  echo "$srch"|grep -Eq  "/" ; then
+	                if [ -f /usr/ports/$srch/pkg-descr ]; then
+		                bat /usr/ports/$srch/pkg-descr
+	                else
+		                echo "Package not found."
+		                newpath="${1#*/}"
+		                search=$(find /usr/ports/ -iname $newpath)
+                        if [ -z $search ]; then
+                            echo "sorry.."
+                            exit 1
+                        else 
+                            echo "Did you mean..?"
+                            echo $search
+                        fi
+            	fi
+                else
+	                echo 'Missing category in ports root, did you mean..?'
+	                echo  $(find /usr/ports/ -iname $1)
+                fi
+            fi	
+        }
         ;;
       darwin*)
         export OS_NAME=darwin
@@ -35,3 +61,26 @@ case $(uname | tr '[:upper:]' '[:lower:]') in
         export TRAVIS_OS_NAME=notset
         ;;
     esac
+
+alias cp='cp -iv'
+alias mv='mv -iv'
+alias rm='rm -iv'
+alias cls='clear'
+alias path='echo -e ${PATH//:/\\n}'       
+alias whence='type -a'
+
+alias less='less -FglAhpX'
+
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+
+alias myip='drill +short myip.opendns.com @resolver1.opendns.com'
+
+alias sniff="sudo ngrep -d 'en1' -t '^(GET|POST) ' 'tcp and port 80'"
+alias httpdump="sudo tcpdump -i en1 -n -s 0 -w - | grep -a -o -E \"Host\: .*|GET \/.*\""
+

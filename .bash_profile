@@ -6,5 +6,5 @@ if [ -f ~/.bashrc ]; then
 fi
 
 # User specific environment and startup programs
-export PATH="$HOME/.poetry/bin:$PATH"
-. "$HOME/.cargo/env"
+#export PATH="$HOME/.poetry/bin:$PATH"
+#. "$HOME/.cargo/env"
