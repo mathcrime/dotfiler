@@ -1,5 +1,45 @@
+# .inputrc: configures gnu's readline program
+# controls keyboard interaction with the shell at command-line
+#
+# To source this file:
+#   bind -f {thefilename}
+# To know the list of functions, bound or not
+#   bind -p | less
+
+# Mini-reference of some functionality:
+# - "\C-x\C-u": undo
+# - "\e#": insert-comment
+# - "\C-s": forward-search-history
+# - "\C-r": reverse-search-history
+# - "\et": transpose-words
+# - restore a binding: self-insert
+# Control-u: kill-whole-line
+# Home: beginning-of-line
+
 # Use vi mode.
 set editing-mode vi
+
+# Configuration options:
+set bell-style none
+set colored-completion-prefix on
+set colored-stats on
+set expand-tilde on
+set mark-modified-lines on
+set show-all-if-unmodified on
+set visible-stats on
+
+# enable 8-bit characters..
+set meta-flag on
+set convert-meta off
+set output-meta on
+
+#set show-mode-in-prompt on
+#set vi-ins-mode-string "+"
+#set vi-cmd-mode-string ":"
+
+set show-mode-in-prompt on
+set vi-ins-mode-string " "
+set vi-cmd-mode-string "\1\e[101m\2 \1\e[0m\2"
 
 # Use C-l in insert mode to clear the screen (it only works in normal mode
 # otherwise).
@@ -7,6 +47,40 @@ set editing-mode vi
 
 "\C-x\C-f":complete-filename
 
-set show-mode-in-prompt on
-set vi-ins-mode-string " "
-set vi-cmd-mode-string "\1\e[101m\2 \1\e[0m\2"
+# Moving around
+"\e[1;5C": forward-word
+"\e[1;5D": backward-word
+
+# Ctrl+Backspace/Delete to delete whole words
+"\e[3;5~": kill-word
+"\C-_": backward-kill-word
+
+# Ctrl+Shift+Backspace/Delete to delete to start/end of the line
+"\e[3;6~": kill-line
+"\xC2\x9F": backward-kill-line  # for UTF-8
+#"\x9F": backward-kill-line     # for ISO-8859-x
+#"\e\C-_": backward-kill-line   # for any other charset
+
+# Insert "$()" around current line
+"\e\C-m": '\C-a"$(\C-e)"'
+
+# CTRL+up/down: navigate search history
+"\e[1;5A": history-search-backward
+"\e[1;5B": history-search-forward
+
+# Insert " 2>&1"
+"\e2": '2>&1'
+
+# Append " | less"
+"\el": '\C-e | less -X'
+
+# Prepend "less"
+"\eL": '\C-aless '
+
+# Find
+"\eF": '\C-afind . -name '
+
+# append "| awk /pattern/ {print $42}"
+"\ea": '\C-e | awk \'/pattern/ {print $42}\''
+
+	

@@ -1,0 +1,461 @@
+# ==============================================================================
+# Functions
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Directory Utilities
+# ------------------------------------------------------------------------------
+
+# Change into dir and list contents
+function cdc() {
+  cd $1; ls
+}
+
+# Create a new directory and enter it
+function md() {
+  mkdir -p "$@" && cd "$@"
+}
+
+# ------------------------------------------------------------------------------
+# Network (IP, TCP, HTTP, SSH, etc.)
+# ------------------------------------------------------------------------------
+
+# Test if HTTP compression (RFC 2616 + SDCH) is enabled for a given URL.
+# Send a fake UA string for sites that sniff it instead of using the
+# Accept-Encoding header. (Looking at you, ajax.googleapis.com!)
+function httpcompression() {
+  encoding="$(curl -LIs -H 'User-Agent: Mozilla/5 Gecko' -H 'Accept-Encoding: gzip,deflate,compress,sdch' "$1" | grep '^Content-Encoding:')" && echo "$1 is encoded using ${encoding#* }" || echo "$1 is not using any encoding"
+}
+
+# All the dig info
+function digga() {
+  dig +nocmd "$1" any +multiline +noall +answer
+}
+
+# Setup an SSH tunnel
+function haproxyssh() {
+  ssh -L7997:127.0.0.1:7997 deploy@$1.com
+}
+
+# List internal network IP addresses
+function ips {
+  ifconfig | grep "inet " | awk '{ print $2 }'
+}
+
+# Check if a Web site is down within local network or not
+function down4me() {
+  curl -s "http://www.downforeveryoneorjustme.com/$1" | sed '/just you/!d;s/<[^>]*>//g'
+}
+
+# Retrieve public IP address
+function myip {
+  res=$(curl -s checkip.dyndns.org | grep -Eo '[0-9\.]+')
+  echo -e "Your public IP is: ${echo_bold_green} $res ${echo_normal}"
+}
+
+# ------------------------------------------------------------------------------
+# System (Processes, Battery, etc.)
+# ------------------------------------------------------------------------------
+
+# Kill named process
+function killnamed () {
+  ps ax | grep $1 | cut -d ' ' -f 2 | xargs kill
+}
+
+# Get current battery charge as percentage
+function battery_percentage() {
+  if command -v acpi >/dev/null 2>&1; then
+    local ACPI_OUTPUT=$(acpi -b)
+    case $ACPI_OUTPUT in
+      *" Unknown"*)
+        local PERC_OUTPUT=$(echo $ACPI_OUTPUT | head -c 22 | tail -c 2)
+        case $PERC_OUTPUT in
+          *%)
+            echo "0${PERC_OUTPUT}" | head -c 2
+            ;;
+          *)
+            echo ${PERC_OUTPUT}
+            ;;
+        esac
+        ;;
+      *" Discharging"*)
+        local PERC_OUTPUT=$(echo $ACPI_OUTPUT | head -c 26 | tail -c 2)
+        case $PERC_OUTPUT in
+          *%)
+            echo "0${PERC_OUTPUT}" | head -c 2
+            ;;
+          *)
+            echo ${PERC_OUTPUT}
+            ;;
+        esac
+        ;;
+      *" Charging"*)
+        local PERC_OUTPUT=$(echo $ACPI_OUTPUT | head -c 23 | tail -c 2)
+        case $PERC_OUTPUT in
+          *%)
+            echo "0${PERC_OUTPUT}" | head -c 2
+            ;;
+          *)
+            echo ${PERC_OUTPUT}
+            ;;
+        esac
+        ;;
+      *" Full"*)
+        echo '99'
+        ;;
+      *)
+        echo '-1'
+        ;;
+    esac
+  elif command -v ioreg >/dev/null 2>&1; then
+    # http://hints.macworld.com/article.php?story=20100130123935998
+    local IOREG_OUTPUT=$(ioreg -n AppleSmartBattery -r | awk '$1~/Capacity/{c[$1]=$3} END{OFMT="%.2f%%"; max=c["\"MaxCapacity\""]; print (max>0? 100*c["\"CurrentCapacity\""]/max: "?")}')
+    case $IOREG_OUTPUT in
+      100*)
+        echo '100'
+        ;;
+      *)
+        echo $IOREG_OUTPUT | head -c 2
+        ;;
+    esac
+  else
+    echo "no"
+  fi
+}
+
+# Get current battery charge as graphical indicator
+function battery_charge() {
+  # Full indicator
+  local F_C='▸'
+  # Depleted indicator
+  local D_C='▹'
+  local DEPLETED_COLOR="${normal}"
+  local FULL_COLOR="${green}"
+  local HALF_COLOR="${yellow}"
+  local DANGER_COLOR="${red}"
+  local BATTERY_OUTPUT="${DEPLETED_COLOR}${D_C}${D_C}${D_C}${D_C}${D_C}"
+  local BATTERY_PERC=$(battery_percentage)
+
+  case $BATTERY_PERC in
+    no)
+      echo ""
+      ;;
+    9*)
+      echo "${FULL_COLOR}${F_C}${F_C}${F_C}${F_C}${F_C}${normal}"
+      ;;
+    8*)
+      echo "${FULL_COLOR}${F_C}${F_C}${F_C}${F_C}${HALF_COLOR}${F_C}${normal}"
+      ;;
+    7*)
+      echo "${FULL_COLOR}${F_C}${F_C}${F_C}${F_C}${DEPLETED_COLOR}${D_C}${normal}"
+      ;;
+    6*)
+      echo "${FULL_COLOR}${F_C}${F_C}${F_C}${HALF_COLOR}${F_C}${DEPLETED_COLOR}${D_C}${normal}"
+      ;;
+    5*)
+      echo "${FULL_COLOR}${F_C}${F_C}${F_C}${DEPLETED_COLOR}${D_C}${D_C}${normal}"
+      ;;
+    4*)
+      echo "${FULL_COLOR}${F_C}${F_C}${HALF_COLOR}${F_C}${DEPLETED_COLOR}${D_C}${D_C}${normal}"
+      ;;
+    3*)
+      echo "${FULL_COLOR}${F_C}${F_C}${DEPLETED_COLOR}${D_C}${D_C}${D_C}${normal}"
+      ;;
+    2*)
+      echo "${FULL_COLOR}${F_C}${HALF_COLOR}${F_C}${DEPLETED_COLOR}${D_C}${D_C}${D_C}${normal}"
+      ;;
+    1*)
+      echo "${FULL_COLOR}${F_C}${DEPLETED_COLOR}${D_C}${D_C}${D_C}${D_C}${normal}"
+      ;;
+    05)
+      echo "${DANGER_COLOR}${F_C}${DEPLETED_COLOR}${D_C}${D_C}${D_C}${D_C}${normal}"
+      ;;
+    04)
+      echo "${DANGER_COLOR}${F_C}${DEPLETED_COLOR}${D_C}${D_C}${D_C}${D_C}${normal}"
+      ;;
+    03)
+      echo "${DANGER_COLOR}${F_C}${DEPLETED_COLOR}${D_C}${D_C}${D_C}${D_C}${normal}"
+      ;;
+    02)
+      echo "${DANGER_COLOR}${F_C}${DEPLETED_COLOR}${D_C}${D_C}${D_C}${D_C}${normal}"
+      ;;
+    0*)
+      echo "${HALF_COLOR}${F_C}${DEPLETED_COLOR}${D_C}${D_C}${D_C}${D_C}${normal}"
+      ;;
+    *)
+      echo "${DANGER_COLOR}UNPLG${normal}"
+      ;;
+  esac
+}
+
+# View disk usage per directory from current path, X levels deep
+function usage() {
+  DEPTH=${1:-1}
+  if [[ ! $DEPTH =~ ^-?[0-9]+$ ]]; then
+    echo "Invalid argument, depth may only be an integer (default: 1)"
+  else
+    if [ $(uname) = "Darwin" ]; then
+      du -hd $DEPTH
+    elif [ $(uname) = "Linux" ]; then
+      du -h --max-depth=1 $1
+    fi
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# General Utilities
+# ------------------------------------------------------------------------------
+
+# Zip recursively
+function zipr() {
+  zip -r $1.zip $1
+}
+
+# Back up file with timestamp
+# Useful for administrators and configs
+function buf() {
+  filename=$1
+  filetime=$(date +%Y%m%d_%H%M%S)
+  cp ${filename} ${filename}_${filetime}
+}
+
+# Extract archive in various compressed formats
+function extract() {
+  if [ $# -ne 1 ]; then
+    echo "Error: No file specified."
+    return 1
+  fi
+  if [ -f $1 ]; then
+    case $1 in
+      *.tar.bz2) tar xvjf $1   ;;
+      *.tar.gz)  tar xvzf $1   ;;
+      *.bz2)     bunzip2 $1    ;;
+      *.rar)     unrar x $1    ;;
+      *.gz)      gunzip $1     ;;
+      *.tar)     tar xvf $1    ;;
+      *.tbz2)    tar xvjf $1   ;;
+      *.tgz)     tar xvzf $1   ;;
+      *.zip)     unzip $1      ;;
+      *.Z)       uncompress $1 ;;
+      *.7z)      7z x $1       ;;
+      *)         echo "'$1' does not match any expected compression formats" ;;
+    esac
+  else
+    echo "'$1' is not a valid file"
+  fi
+}
+
+# Move files to trash (Mac OS X) [From http://github.com/suztomo/dotfiles]
+if [[ "$OSTYPE" =~ ^darwin ]]; then
+  function rmf() {
+    for file in $*
+    do
+      __rm_single_file $file
+    done
+  }
+
+  function __rm_single_file() {
+    if ! [ -d ~/.Trash/ ]; then
+      command /bin/mkdir ~/.Trash
+    fi
+
+    if ! [ $# -eq 1 ]; then
+      echo "__rm_single_file: 1 argument required but $# passed."
+      exit
+    fi
+
+    if [ -e $1 ]; then
+      BASENAME=`basename $1`
+      NAME=$BASENAME
+      COUNT=0
+      while [ -e ~/.Trash/$NAME ]
+      do
+        COUNT=$(($COUNT+1))
+        NAME="$BASENAME.$COUNT"
+      done
+
+      command /bin/mv $1 ~/.Trash/$NAME
+    else
+      echo "No such file or directory: $file"
+    fi
+  }
+fi
+
+# Pipe output to a browser
+function browser() {
+  if [ -t 0 ]; then
+    if [ -n "$1" ]; then
+      open $1
+    else
+      cat <<usage
+Usage: browser
+pipe html to a browser
+
+$ echo '<h1>hi mom!</h1>' | browser
+$ ron -5 man/rip.5.ron | browser
+usage
+    fi
+  else
+    f="/tmp/browser.$RANDOM.html"
+      cat /dev/stdin > $f
+      open $f
+  fi
+}
+
+# Function for previewing markdown files in the browser
+function pmdown() {
+  if command -v markdown &>/dev/null; then
+    markdown $1 | browser
+  else
+    echo "You don't have a markdown command installed!"
+  fi
+}
+
+# Escape UTF-8 characters into their 3-byte format
+function escape() {
+  printf "\\\x%s" $(printf "$@" | xxd -p -c1 -u)
+  echo # newline
+}
+
+# Decode \x{ABCD}-style Unicode escape sequences
+function unidecode() {
+  perl -e "binmode(STDOUT, ':utf8'); print \"$@\""
+  echo # newline
+}
+
+# Get a character’s Unicode code point
+function codepoint() {
+  perl -e "use utf8; print sprintf('U+%04X', ord(\"$@\"))"
+  echo # newline
+}
+
+# ------------------------------------------------------------------------------
+# Nginx
+# ------------------------------------------------------------------------------
+
+if command -v nginx >/dev/null 2>&1; then
+
+  # Kill any running nginx processes
+  function nginx_stop() {
+    ps ax | grep nginx | cut -d " " -f 1 | xargs sudo kill -9
+  }
+
+  # Start nginx
+  function nginx_start() {
+    NGINX=`command -v nginx`
+    sudo $NGINX
+  }
+fi
+
+# ------------------------------------------------------------------------------
+# Git
+# ------------------------------------------------------------------------------
+
+# Commit pending changes and quote all args as message
+function gg() {
+  git commit -v -a -m "$*"
+}
+
+# Git clone from GitHub
+function gch() {
+  git clone git://github.com/$USER/$1.git
+}
+
+# Setup a tracking branch from [remote] [branch_name]
+function gbt() {
+  git branch --track $2 $1/$2 && git checkout $2
+}
+
+# Quickly clobber a file and checkout
+function grf() {
+  rm $1
+  git checkout $1
+}
+
+# Remove any missing files from Git repo (ie. manually removed files)
+function git_remove_missing_files() {
+  git ls-files -d -z | xargs -0 git update-index --remove
+}
+
+# Call from inside an initialized Git repo, with the name of the repo.
+function new-git() {
+  ssh git@example.com 'mkdir $1.git && cd $1.git && git --bare init'
+  git remote add origin git@example.com:$1.git
+  git push origin master
+  git config branch.master.remote origin
+  git config branch.master.merge refs/heads/master
+  git config push.default current
+}
+
+# Get a quick overview for your Git repo
+function git_info() {
+  if [ -n "$(git symbolic-ref HEAD 2> /dev/null)" ]; then
+
+    echo "Git Repository Overview"
+    echo "-----------------------"
+    echo
+
+    # List all remotes
+    for remote in $(git remote show); do
+      echo $remote:
+      git remote show $remote
+      echo
+    done
+
+    # Show status of working repo
+    echo "Status:"
+    if [ -n "$(git status -s 2> /dev/null)" ]; then
+      git status -s
+    else
+      echo "Working directory is clean"
+    fi
+
+    # Print 5 most recent logs
+    echo
+    echo "Log:"
+    git log -5 --oneline
+    echo
+
+  else
+    echo `pwd` "is not a Git repository"
+  fi
+}
+
+# Get various Git statistics
+# Awesome work from https://github.com/esc/git-stats
+# including some modifications from BASH_IT
+function git_stats {
+  if [ -n "$(git symbolic-ref HEAD 2> /dev/null)" ]; then
+    echo "Number of commits per author:"
+    git --no-pager shortlog -sn --all
+    AUTHORS=$( git shortlog -sn --all | cut -f2 | cut -f1 -d' ')
+    LOGOPTS=""
+    if [ "$1" == '-w' ]; then
+      LOGOPTS="$LOGOPTS -w"
+      shift
+    fi
+    if [ "$1" == '-M' ]; then
+      LOGOPTS="$LOGOPTS -M"
+      shift
+    fi
+    if [ "$1" == '-C' ]; then
+      LOGOPTS="$LOGOPTS -C --find-copies-harder"
+      shift
+    fi
+    for a in $AUTHORS
+    do
+      echo '-------------------'
+      echo "Statistics for: $a"
+      echo -n "Number of files changed: "
+      git log $LOGOPTS --all --numstat --format="%n" --author=$a | cut -f3 | sort -iu | wc -l
+      echo -n "Number of lines added: "
+      git log $LOGOPTS --all --numstat --format="%n" --author=$a | cut -f1 | awk '{s+=$1} END {print s}'
+      echo -n "Number of lines deleted: "
+      git log $LOGOPTS --all --numstat --format="%n" --author=$a | cut -f2 | awk '{s+=$1} END {print s}'
+      echo -n "Number of merges: "
+      git log $LOGOPTS --all --merges --author=$a | grep -c '^commit'
+    done
+  else
+    echo `pwd` "is not a Git repository"
+  fi
+}
