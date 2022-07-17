@@ -1,5 +1,8 @@
 
 if [[ "$OS_TYPE" =~ ^freebsd || "$OS_TYPE" =~ ^bsd ]]; then
+	export CLICOLOR=1
+	export LSCOLORS="exfxcxdxbxegedabagacad"
+
 	alias ls='ls -aFG'
 	alias dir='ls -aFGhl'
 	
@@ -80,7 +83,7 @@ alias less='less -FglAhpX'
 
 # Go to the last directory CDed from
 alias -- -='cd -'
-alias ~ ~='cd ~'
+#alias ~ ~='cd ~'
 alias ..="cd .."
 alias ...="cd ../.."
 alias ....="cd ../../.."
