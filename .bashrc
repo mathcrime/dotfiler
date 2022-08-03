@@ -25,7 +25,9 @@ shopt -s hostcomplete
 shopt -s globstar
 shopt -s extglob
 
-export HISTCONTROL=ignoredups
+export HISTCONTROL=ignoreboth
+export HISTSIZE=5000
+export HISTFILESIZE=10000
 
 export EDITOR=vim
 export PAGER=less
@@ -61,13 +63,16 @@ lowercase(){
     echo "$1" | sed "y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/"
 }
 
-OS=`lowercase \`uname\``
-OSTYPE=''
-KERNEL=`uname -r`
-MACH=`uname -m`
+OS=$(lowercase `uname`)
+OS_TYPE=''
+KERNEL=$(uname -r)
+MACH=$(uname -m)
 DISTRO=''
 
-f [[ "$OSTYPE" =~ ^darwin ]]; then
+export OS; export OS_TYPE; export KERNEL; export MACH; export DISTRO;
+
+
+#if [[ "$OSTYPE" =~ ^darwin ]]; then
 
 case $OS in
 	windows*)
@@ -80,6 +85,7 @@ case $OS in
 		else
 			export OS_TYPE=bsd
 		fi
+		;;
 	darwin*)
 		export OS_TYPE=darwin;;
 	cygwin*)
@@ -160,7 +166,7 @@ if [ -d ~/.bashrc.d ]; then
 fi
 unset rc
 
-if [ -f $HOME/.cargo/env ]
+if [ -f $HOME/.cargo/env ]; then
 	. "$HOME/.cargo/env"
 fi
 
@@ -180,7 +186,11 @@ YELLOW="\e[93m"
 RED="\e[91m"
 BLUE="\e[34m"
 
+export RESET; export GREEN; export YELLOW; export RED; export BLUE;
 export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+
+# make less more friendly for non-text input files, see lesspipe(1)
+[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
 # Try to keep environment pollution down, EPA loves us.
 unset use_color sh
