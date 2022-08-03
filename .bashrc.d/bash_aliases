@@ -5,9 +5,12 @@ if [[ "$OS_TYPE" =~ ^freebsd || "$OS_TYPE" =~ ^bsd ]]; then
 
 	alias ls='ls -aFG'
 	alias dir='ls -aFGhl'
-	
+
+	alias less='less -AFgJMQswX --use-color'
+	export MANCOLOR=1
+	export MANPAGER='less -RAFgJMQswX --use-color'
+
 	alias open="xdg-open"
- 
 fi
 
 
@@ -17,6 +20,13 @@ if [[ "$OS_TYPE" =~ ^linux ]]; then
 	
 	alias pbcopy='xsel --clipboard --input'
 	alias pbpaste='xsel --clipboard --output'
+
+	# less version 551: 11 june 2019
+	# mark nudelman, less@gnu.org
+	
+	alias less='less -AFgJMQswX --use-color'
+	export MANCOLOR=1
+	export MANPAGER='less -RAFgJMQswX --use-color'
 
 	alias open="xdg-open"
 	alias flush='sudo /etc/init.d/nscd restart'
@@ -33,6 +43,12 @@ if [[ "$OS_TYPE" =~ ^darwin ]]; then
 
 	alias emptytrash='sudo rm -rfv /Volumes/*/.Trashes; sudo rm -rfv ~/.Trash; sudo rm -rfv /private/var/log/asl/*.asl'
 
+	# less version 487: 25 oct 2016
+	# mark nudelman
+	# less@gnu.org via greenwoodsoftware.com
+	alias less='less -AFgJMQswX'
+	export MANCOLOR=1
+	export MANPAGER='less -RAFgJMQswX'
 	# Recursively delete `.DS_Store` files
 	alias cleanup="find . -name '*.DS_Store' -type f -ls -delete"
 fi
@@ -69,7 +85,7 @@ alias lsd='ls -l | grep "^d"'
 
 alias myip='drill +short myip.opendns.com @resolver1.opendns.com'
 alias localip='ipconfig getifaddr en1'
-alias ips="ifconfig -a | perl -nle'/(\d+\.\d+\.\d+\.\d+)/ && print $1'"
+#alias ips="ifconfig -a | perl -nle'/(\d+\.\d+\.\d+\.\d+)/ && print $1'"
 alias whois='whois -h whois-servers.net'
 
 alias cp='cp -iv'
@@ -78,8 +94,6 @@ alias rm='rm -iv'
 alias cls='clear'
 alias path='echo -e ${PATH//:/\\n}'       
 alias whence='type -a'
-
-alias less='less -FglAhpX'
 
 # Go to the last directory CDed from
 alias -- -='cd -'
