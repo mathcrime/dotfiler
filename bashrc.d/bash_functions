@@ -2,6 +2,25 @@
 # Functions
 # ==============================================================================
 
+if [[ "$OS_TYPE" == freebsd ]]; then
+
+	function sport {
+		if [$# -eq 0]
+		then
+			echo "Error: search term required."
+		else
+			local odir=`pwd`
+			cd /usr/ports
+			make search key=$1 |egrep -B1 "^Info"
+			cd $odir
+		fi
+	}
+
+
+
+fi
+
+
 # ------------------------------------------------------------------------------
 # Directory Utilities
 # ------------------------------------------------------------------------------
