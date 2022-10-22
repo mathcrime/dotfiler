@@ -6,6 +6,7 @@ if [[ "$OS_TYPE" =~ ^freebsd || "$OS_TYPE" =~ ^bsd ]]; then
 	alias ls='ls -aFG'
 	alias dir='ls -aFGhl'
 
+	alias less='less -AFgJMQswX --use-color'
 	export MANCOLOR=1
 	alias open="xdg-open"
 fi
@@ -34,6 +35,9 @@ if [[ "$OS_TYPE" =~ ^darwin ]]; then
 	alias flush='dscacheutil -flushcache'
 
 	alias emptytrash='sudo rm -rfv /Volumes/*/.Trashes; sudo rm -rfv ~/.Trash; sudo rm -rfv /private/var/log/asl/*.asl'
+	alias appstoreapps="find /Applications -path '*Contents/_MASReceipt/receipt' -maxdepth 4 -print |\sed 's#.app/Contents/_MASReceipt/receipt#.app#g; s#/Applications/##'"
+	alias spotstoreapps="mdfind kMDItemAppStoreHasReceipt=1"
+	alias blocate="sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.locate.plist"
 
 	export MANCOLOR=1
 
@@ -112,4 +116,8 @@ alias egrep='egrep --color=auto'
 
 alias sniff="sudo ngrep -d 'en1' -t '^(GET|POST) ' 'tcp and port 80'"
 alias httpdump="sudo tcpdump -i en1 -n -s 0 -w - | grep -a -o -E \"Host\: .*|GET \/.*\""
+
+# NEW aliases should go here:
+
+alias tt='taskwarrior-tui'
 
